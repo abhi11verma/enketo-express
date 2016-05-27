@@ -127,6 +127,7 @@ function _updateCache( survey ) {
             if ( !upToDate ) {
                 delete survey.formHash;
                 delete survey.mediaHash;
+                delete survey.mediaUrlHash;
                 delete survey.xslHash;
                 return _getFormDirectly( survey )
                     .then( cacheModel.set );

@@ -47,6 +47,7 @@ function getSurvey( survey ) {
                     survey.model = cacheObj.model;
                     survey.formHash = cacheObj.formHash;
                     survey.mediaHash = cacheObj.mediaHash;
+                    survey.mediaUrlHash = cacheObj.mediaUrlHash;
                     survey.xslHash = cacheObj.xslHash;
                     resolve( survey );
                 }
@@ -73,7 +74,7 @@ function getSurveyHashes( survey ) {
         } else {
             key = _getKey( survey );
 
-            client.hmget( key, [ 'formHash', 'mediaHash', 'xslHash' ], function( error, hashArr ) {
+            client.hmget( key, [ 'formHash', 'mediaHash', 'mediaUrlHash', 'xslHash' ], function( error, hashArr ) {
                 if ( error ) {
                     reject( error );
                 } else if ( !hashArr ) {
@@ -81,7 +82,8 @@ function getSurveyHashes( survey ) {
                 } else {
                     survey.formHash = hashArr[ 0 ];
                     survey.mediaHash = hashArr[ 1 ];
-                    survey.xslHash = hashArr[ 2 ];
+                    survey.mediaUrlHash = hashArr[ 2 ];
+                    survey.xslHash = hashArr[ 3 ];
                     resolve( survey );
                 }
             } );
@@ -128,11 +130,15 @@ function isCacheUpToDate( survey ) {
                     // is passed around. The hashes may therefore already have been calculated 
                     // when setting the cache later on.
                     // mediaHash can be "null" in Redis and null in reality so it is cast to a string
+                    // Note that the server cache doesn't care about media hashes. It only care media URLs.
+                    // This allows the same cache to be used for a form for the OpenRosa server serves different media content,
+                    // based on the user credentials.a
                     _addHashes( survey );
-                    if ( cacheObj.formHash !== survey.formHash || cacheObj.mediaHash !== String( survey.mediaHash ) || cacheObj.xslHash !== survey.xslHash ) {
+                    if ( cacheObj.formHash !== survey.formHash || cacheObj.mediaUrlHash !== String( survey.mediaUrlHash ) || cacheObj.xslHash !== survey.xslHash ) {
                         debug( 'cache is obsolete' );
                         resolve( false );
                     } else {
+                        debug( 'cache is up to date' );
                         resolve( true );
                     }
                 }
@@ -161,6 +167,7 @@ function setSurvey( survey ) {
             obj = {
                 formHash: survey.formHash,
                 mediaHash: survey.mediaHash,
+                mediaUrlHash: survey.mediaUrlHash,
                 xslHash: survey.xslHash,
                 form: survey.form,
                 model: survey.model
@@ -207,6 +214,7 @@ function flushSurvey( survey ) {
                     delete survey.formHash;
                     delete survey.xlsHash;
                     delete survey.mediaHash;
+                    delete survey.mediaUrlHash;
                     resolve( survey );
                 }
             } );
@@ -256,9 +264,31 @@ function _getKey( survey ) {
  * @param {[type]} survey [description]
  */
 function _addHashes( survey ) {
+    var mediaHash = _getMediaHash( survey.manifest, 'all' );
+    var mediaUrlHash = _getMediaHash( 'downloadUrl' );
     survey.formHash = survey.formHash || survey.info.hash;
     survey.mediaHash = survey.mediaHash || ( ( survey.manifest && survey.manifest.length > 0 ) ? utils.md5( JSON.stringify( survey.manifest ) ) : null );
+    survey.mediaUrlHash = survey.mediaUrlHash || _getMediaHash( 'downloadUrl' );
     survey.xslHash = survey.xslHash || transformer.version;
+}
+
+function _getMediaHash( manifest, type ) {
+    var hash = '';
+    var filtered;
+
+    if ( !survey.manifest || survey.manifest.length === 0 ) {
+        return null; // TODO empty string instead?
+    }
+    if ( type === 'all' ) {
+        return utils.md5( JSON.stringify( manifest ) );
+    }
+    if ( type ) {
+        filtered = manifest.map( function( mediaFile ) {
+            return mediaFile[ type ];
+        } );
+        return utils.md5( JSON.stringify( filtered ) );
+    }
+    return hash;
 }
 
 module.exports = {
