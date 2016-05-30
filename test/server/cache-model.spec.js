@@ -288,7 +288,6 @@ describe( 'Cache Model', function() {
         it( 'returns a different formHash when only the XForm hash has been updated', function() {
             var getHashes1;
             var getHashes2;
-            var expectedMediaHash = '297a2f4eaccdf22a0b1eb49a2f4bea4e';
             var expectedMediaUrlHash = '125d07a4b194812b6dd23be62e60f846';
             var updatedSurvey = JSON.parse( JSON.stringify( survey ) );
 
@@ -312,15 +311,13 @@ describe( 'Cache Model', function() {
 
             return Promise.all( [
                 expect( getHashes1 ).to.eventually.have.property( 'formHash' ).that.equals( 'abc' ),
-                expect( getHashes1 ).to.eventually.have.property( 'mediaHash' ).that.equals( expectedMediaHash ),
                 expect( getHashes1 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( expectedMediaUrlHash ),
 
                 expect( getHashes2 ).to.eventually.have.property( 'formHash' ).that.equals( 'def' ),
-                expect( getHashes2 ).to.eventually.have.property( 'mediaHash' ).that.equals( expectedMediaHash ),
                 expect( getHashes2 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( expectedMediaUrlHash ),
             ] );
         } );
-        it( 'returns a different mediaHash when a manifest resource md5 has been updated', function() {
+        it( 'returns the same mediaUrl hash when manifest resource md5 has been updated', function() {
             var getHashes1;
             var getHashes2;
             var expectedFormHash = 'abc';
@@ -339,15 +336,13 @@ describe( 'Cache Model', function() {
 
             return Promise.all( [
                 expect( getHashes1 ).to.eventually.have.property( 'formHash' ).that.equals( expectedFormHash ),
-                expect( getHashes1 ).to.eventually.have.property( 'mediaHash' ).that.equals( '297a2f4eaccdf22a0b1eb49a2f4bea4e' ),
                 expect( getHashes1 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( expectedMediaUrlHash ),
 
                 expect( getHashes2 ).to.eventually.have.property( 'formHash' ).that.equals( expectedFormHash ),
-                expect( getHashes2 ).to.eventually.have.property( 'mediaHash' ).that.equals( '71c55f51a4d8b59c499992e4ff5b5b12' ),
                 expect( getHashes2 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( expectedMediaUrlHash ),
             ] );
         } );
-        it( 'returns a different mediaHash and mediaUrlHash when a manifest resource md5 has been updated', function() {
+        it( 'returns a different mediaUrlHash when a manifest resource downloadUrl has been updated', function() {
             var getHashes1;
             var getHashes2;
             var expectedFormHash = 'abc';
@@ -365,11 +360,9 @@ describe( 'Cache Model', function() {
 
             return Promise.all( [
                 expect( getHashes1 ).to.eventually.have.property( 'formHash' ).that.equals( expectedFormHash ),
-                expect( getHashes1 ).to.eventually.have.property( 'mediaHash' ).that.equals( '297a2f4eaccdf22a0b1eb49a2f4bea4e' ),
                 expect( getHashes1 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( '125d07a4b194812b6dd23be62e60f846' ),
 
                 expect( getHashes2 ).to.eventually.have.property( 'formHash' ).that.equals( expectedFormHash ),
-                expect( getHashes2 ).to.eventually.have.property( 'mediaHash' ).that.equals( 'ee02d0a54739f9786002dc02e4e86306' ),
                 expect( getHashes2 ).to.eventually.have.property( 'mediaUrlHash' ).that.equals( '0a0c98112322a6a65835d8cd1955f871' ),
             ] );
         } );

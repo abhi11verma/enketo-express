@@ -41,9 +41,6 @@ function getSurveyParts( req, res, next ) {
 
     _getSurveyParams( req )
         .then( function( survey ) {
-            // store a copy of the bare survey object
-            surveyBare = JSON.parse( JSON.stringify( survey ) );
-
             if ( survey.info ) {
                 _getFormDirectly( survey )
                     .then( function( survey ) {
@@ -53,20 +50,9 @@ function getSurveyParts( req, res, next ) {
             } else {
                 _authenticate( survey )
                     .then( _getFormFromCache )
+                    .then( _updateCache )
                     .then( function( result ) {
-                        if ( result ) {
-                            // immediately serve from cache without first checking for updates
-                            _respond( res, result );
-                            // update cache if necessary, asynchronously AFTER responding
-                            // This is the ONLY mechanism by with an online-only form will be updated
-                            _updateCache( surveyBare );
-                        } else {
-                            _updateCache( surveyBare )
-                                .then( function( survey ) {
-                                    _respond( res, survey );
-                                } )
-                                .catch( next );
-                        }
+                        _respond( res, result );
                     } )
                     .catch( next );
             }
@@ -86,9 +72,7 @@ function getSurveyHash( req, res, next ) {
         .then( function( survey ) {
             return cacheModel.getHashes( survey );
         } )
-        .then( function( survey ) {
-            return _updateCache( survey );
-        } )
+        .then( _updateCache )
         .then( function( survey ) {
             if ( survey.hasOwnProperty( 'credentials' ) ) {
                 delete survey.credentials;
@@ -120,20 +104,26 @@ function _getFormFromCache( survey ) {
  * @param  {[type]} survey [description]
  */
 function _updateCache( survey ) {
+    var surveyBare = {};
+
     return communicator.getXFormInfo( survey )
         .then( communicator.getManifest )
         .then( cacheModel.check )
         .then( function( upToDate ) {
             if ( !upToDate ) {
-                delete survey.formHash;
-                delete survey.mediaHash;
-                delete survey.mediaUrlHash;
-                delete survey.xslHash;
-                return _getFormDirectly( survey )
+                surveyBare.openRosaId = survey.openRosaId;
+                surveyBare.openRosaServer = survey.openRosaServer;
+                surveyBare.cookie = survey.cookie;
+                surveyBare.credentials = survey.credentials;
+                surveyBare.info = survey.info;
+                surveyBare.manifest = survey.manifest;
+                surveyBare.theme = survey.theme;
+                return _getFormDirectly( surveyBare )
                     .then( cacheModel.set );
             }
             return survey;
         } )
+        .then( _addMediaHashes )
         .catch( function( error ) {
             if ( error.status === 401 || error.status === 404 ) {
                 cacheModel.flush( survey );
@@ -143,6 +133,11 @@ function _updateCache( survey ) {
 
             throw error;
         } );
+}
+
+function _addMediaHashes( survey ) {
+    survey.mediaHash = utils.getXformsManifestHash( survey.manifest, 'all' );
+    return Promise.resolve( survey );
 }
 
 /**

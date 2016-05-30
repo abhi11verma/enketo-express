@@ -46,7 +46,6 @@ function getSurvey( survey ) {
                     survey.form = cacheObj.form;
                     survey.model = cacheObj.model;
                     survey.formHash = cacheObj.formHash;
-                    survey.mediaHash = cacheObj.mediaHash;
                     survey.mediaUrlHash = cacheObj.mediaUrlHash;
                     survey.xslHash = cacheObj.xslHash;
                     resolve( survey );
@@ -74,16 +73,15 @@ function getSurveyHashes( survey ) {
         } else {
             key = _getKey( survey );
 
-            client.hmget( key, [ 'formHash', 'mediaHash', 'mediaUrlHash', 'xslHash' ], function( error, hashArr ) {
+            client.hmget( key, [ 'formHash', 'mediaUrlHash', 'xslHash' ], function( error, hashArr ) {
                 if ( error ) {
                     reject( error );
-                } else if ( !hashArr || !hashArr[ 0 ] || !hashArr[ 3 ] ) {
+                } else if ( !hashArr || !hashArr[ 0 ] || !hashArr[ 2 ] ) {
                     resolve( null );
                 } else {
                     survey.formHash = hashArr[ 0 ];
-                    survey.mediaHash = hashArr[ 1 ];
-                    survey.mediaUrlHash = hashArr[ 2 ];
-                    survey.xslHash = hashArr[ 3 ];
+                    survey.mediaUrlHash = hashArr[ 1 ];
+                    survey.xslHash = hashArr[ 2 ];
                     resolve( survey );
                 }
             } );
@@ -129,8 +127,7 @@ function isCacheUpToDate( survey ) {
                     // Adding the hashes to the referenced survey object can be efficient, since this object 
                     // is passed around. The hashes may therefore already have been calculated 
                     // when setting the cache later on.
-                    // mediaHash can be "null" in Redis and null in reality so it is cast to a string
-                    // Note that the server cache doesn't care about media hashes. It only care media URLs.
+                    // Note that this server cache only care media URLs, not media content.
                     // This allows the same cache to be used for a form for the OpenRosa server serves different media content,
                     // based on the user credentials.a
                     _addHashes( survey );
@@ -166,7 +163,6 @@ function setSurvey( survey ) {
             _addHashes( survey );
             obj = {
                 formHash: survey.formHash,
-                mediaHash: survey.mediaHash,
                 mediaUrlHash: survey.mediaUrlHash,
                 xslHash: survey.xslHash,
                 form: survey.form,
@@ -265,33 +261,11 @@ function _getKey( survey ) {
  */
 function _addHashes( survey ) {
     survey.formHash = survey.formHash || survey.info.hash;
-    // The mediaHash is generated from **all** content in the manifest. It is taking the better-safe-than-sorry approach to caching.
-    // It is used for the client cache.
-    survey.mediaHash = survey.mediaHash || _getMediaHash( survey.manifest, 'all' );
     // The mediaUrlHash is generated form the downloadUrls in the manifest. It's a more delicate approach, used for the server cache
     // which only needs updating if URLs change. It should never updated when only the media content changes. This allows using dynamic external
     // data that with user-specific content.
-    survey.mediaUrlHash = survey.mediaUrlHash || _getMediaHash( survey.manifest, 'downloadUrl' );
+    survey.mediaUrlHash = survey.mediaUrlHash || utils.getXformsManifestHash( survey.manifest, 'downloadUrl' );
     survey.xslHash = survey.xslHash || transformer.version;
-}
-
-function _getMediaHash( manifest, type ) {
-    var hash = '';
-    var filtered;
-
-    if ( !manifest || manifest.length === 0 ) {
-        return hash;
-    }
-    if ( type === 'all' ) {
-        return utils.md5( JSON.stringify( manifest ) );
-    }
-    if ( type ) {
-        filtered = manifest.map( function( mediaFile ) {
-            return mediaFile[ type ];
-        } );
-        return utils.md5( JSON.stringify( filtered ) );
-    }
-    return hash;
 }
 
 module.exports = {
