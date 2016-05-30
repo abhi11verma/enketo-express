@@ -50,7 +50,13 @@ function getSurveyParts( req, res, next ) {
             } else {
                 _authenticate( survey )
                     .then( _getFormFromCache )
-                    .then( _updateCache )
+                    .then( function( result ) {
+                        if ( result ) {
+                            return _updateCache( result );
+                        } else {
+                            return _updateCache( survey );
+                        }
+                    } )
                     .then( function( result ) {
                         _respond( res, result );
                     } )
@@ -104,20 +110,23 @@ function _getFormFromCache( survey ) {
  * @param  {[type]} survey [description]
  */
 function _updateCache( survey ) {
-    var surveyBare = {};
+    var surveyBare;
 
     return communicator.getXFormInfo( survey )
         .then( communicator.getManifest )
         .then( cacheModel.check )
         .then( function( upToDate ) {
             if ( !upToDate ) {
-                surveyBare.openRosaId = survey.openRosaId;
-                surveyBare.openRosaServer = survey.openRosaServer;
-                surveyBare.cookie = survey.cookie;
-                surveyBare.credentials = survey.credentials;
-                surveyBare.info = survey.info;
-                surveyBare.manifest = survey.manifest;
-                surveyBare.theme = survey.theme;
+                surveyBare = JSON.parse( JSON.stringify( survey ) );
+
+                delete surveyBare.xform;
+                delete surveyBare.form;
+                delete surveyBare.model;
+                delete surveyBare.xslHash;
+                delete surveyBare.mediaHash;
+                delete surveyBare.mediaUrlHash;
+                delete surveyBare.formHash;
+                delete surveyBare.media;
                 return _getFormDirectly( surveyBare )
                     .then( cacheModel.set );
             }

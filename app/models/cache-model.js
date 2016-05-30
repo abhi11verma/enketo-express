@@ -208,7 +208,7 @@ function flushSurvey( survey ) {
                     delete survey.form;
                     delete survey.model;
                     delete survey.formHash;
-                    delete survey.xlsHash;
+                    delete survey.xslHash;
                     delete survey.mediaHash;
                     delete survey.mediaUrlHash;
                     resolve( survey );
