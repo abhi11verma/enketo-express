@@ -77,7 +77,7 @@ function getSurveyHashes( survey ) {
             client.hmget( key, [ 'formHash', 'mediaHash', 'mediaUrlHash', 'xslHash' ], function( error, hashArr ) {
                 if ( error ) {
                     reject( error );
-                } else if ( !hashArr ) {
+                } else if ( !hashArr || !hashArr[ 0 ] || !hashArr[ 3 ] ) {
                     resolve( null );
                 } else {
                     survey.formHash = hashArr[ 0 ];
@@ -264,11 +264,14 @@ function _getKey( survey ) {
  * @param {[type]} survey [description]
  */
 function _addHashes( survey ) {
-    var mediaHash = _getMediaHash( survey.manifest, 'all' );
-    var mediaUrlHash = _getMediaHash( 'downloadUrl' );
     survey.formHash = survey.formHash || survey.info.hash;
-    survey.mediaHash = survey.mediaHash || ( ( survey.manifest && survey.manifest.length > 0 ) ? utils.md5( JSON.stringify( survey.manifest ) ) : null );
-    survey.mediaUrlHash = survey.mediaUrlHash || _getMediaHash( 'downloadUrl' );
+    // The mediaHash is generated from **all** content in the manifest. It is taking the better-safe-than-sorry approach to caching.
+    // It is used for the client cache.
+    survey.mediaHash = survey.mediaHash || _getMediaHash( survey.manifest, 'all' );
+    // The mediaUrlHash is generated form the downloadUrls in the manifest. It's a more delicate approach, used for the server cache
+    // which only needs updating if URLs change. It should never updated when only the media content changes. This allows using dynamic external
+    // data that with user-specific content.
+    survey.mediaUrlHash = survey.mediaUrlHash || _getMediaHash( survey.manifest, 'downloadUrl' );
     survey.xslHash = survey.xslHash || transformer.version;
 }
 
@@ -276,8 +279,8 @@ function _getMediaHash( manifest, type ) {
     var hash = '';
     var filtered;
 
-    if ( !survey.manifest || survey.manifest.length === 0 ) {
-        return null; // TODO empty string instead?
+    if ( !manifest || manifest.length === 0 ) {
+        return hash;
     }
     if ( type === 'all' ) {
         return utils.md5( JSON.stringify( manifest ) );
