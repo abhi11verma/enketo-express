@@ -110,24 +110,20 @@ function _getFormFromCache( survey ) {
  * @param  {[type]} survey [description]
  */
 function _updateCache( survey ) {
-    var surveyBare;
-
     return communicator.getXFormInfo( survey )
         .then( communicator.getManifest )
         .then( cacheModel.check )
         .then( function( upToDate ) {
             if ( !upToDate ) {
-                surveyBare = JSON.parse( JSON.stringify( survey ) );
-
-                delete surveyBare.xform;
-                delete surveyBare.form;
-                delete surveyBare.model;
-                delete surveyBare.xslHash;
-                delete surveyBare.mediaHash;
-                delete surveyBare.mediaUrlHash;
-                delete surveyBare.formHash;
-                delete surveyBare.media;
-                return _getFormDirectly( surveyBare )
+                delete survey.xform;
+                delete survey.form;
+                delete survey.model;
+                delete survey.xslHash;
+                delete survey.mediaHash;
+                delete survey.mediaUrlHash;
+                delete survey.formHash;
+                delete survey.media;
+                return _getFormDirectly( survey )
                     .then( cacheModel.set );
             }
             return survey;
