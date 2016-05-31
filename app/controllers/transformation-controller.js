@@ -51,7 +51,10 @@ function getSurveyParts( req, res, next ) {
                 _authenticate( survey )
                     .then( _getFormFromCache )
                     .then( function( result ) {
-                        if ( result ) {
+                        if ( result && survey.noHashes ) {
+                            _updateCache( result );
+                            return result;
+                        } else if ( result ) {
                             return _updateCache( result );
                         } else {
                             return _updateCache( survey );
@@ -229,12 +232,14 @@ function _getSurveyParams( req ) {
     var urlObj;
     var domain;
     var params = req.body;
+    var noHashes = ( params.noHashes === 'true' );
 
     if ( params.enketoId ) {
         return surveyModel.get( params.enketoId )
             .then( account.check )
             .then( _checkQuota )
             .then( function( survey ) {
+                survey.noHashes = noHashes;
                 return _setCookieAndCredentials( survey, req );
             } );
     } else if ( params.serverUrl && params.xformId ) {
@@ -244,6 +249,7 @@ function _getSurveyParams( req ) {
             } )
             .then( _checkQuota )
             .then( function( survey ) {
+                survey.noHashes = noHashes;
                 return _setCookieAndCredentials( survey, req );
             } );
     } else if ( params.xformUrl ) {
@@ -269,6 +275,7 @@ function _getSurveyParams( req ) {
                 } );
             } )
             .then( function( survey ) {
+                survey.noHashes = noHashes;
                 return _setCookieAndCredentials( survey, req );
             } );
     } else {
