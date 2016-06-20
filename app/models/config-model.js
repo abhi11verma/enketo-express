@@ -10,21 +10,27 @@ var themePath = path.join( __dirname, '../../public/css' );
 var languagePath = path.join( __dirname, '../../locales' );
 // var debug = require( 'debug' )( 'config-model' );
 
-// merge default and local config files 
+// Merge default and local config files if a local config.json file exists
 try {
     localConfig = fs.statSync( path.resolve( __dirname, '../../config/config' ) );
     merge( config, localConfig );
 }
-// override default config with environement variables
+// Override default config with environment variables if a local config.json does not exist
 catch ( err ) {
     console.log( 'No local config.json found. Will check environment variables instead.' );
     _setConfigObjFromEnv( config );
+    _setRedisConfigFromEnv();
 }
 
-// Unfortunately environment variables are flat, so we have to convert to a flat naming convention.
+/**
+ * Overrides a configuration object with values provided by environment variables.
+ * 
+ * @param {*} obj    The configuration object to set.
+ * @param {string} prefix A prefix to use to create a flat variable (for nested objects).
+ */
 function _setConfigObjFromEnv( obj, prefix ) {
     prefix = prefix || '';
-
+    // Unfortunately environment variables are flat, so we have to convert to a flat naming convention.
     for ( var propName in obj ) {
         if ( typeof obj[ propName ] === 'object' ) {
             _setConfigObjFromEnv( obj[ propName ], prefix + propName + '_' );
@@ -34,14 +40,37 @@ function _setConfigObjFromEnv( obj, prefix ) {
     }
 }
 
+/**
+ * Sets a configuration variable with the value set in its corresponding environment variable.
+ * 
+ * @param {[type]} obj    The configuration object to set.
+ * @param {[type]} prop   The property of this configuration object to set.
+ * @param {[type]} prefix The prefix to use to find a flat enviroment variable of a nested object property.
+ */
 function _setConfigValueFromEnv( obj, prop, prefix ) {
-    // convert structured property to flat ENV variable name
+    // convert structured property to flat environment variable name
     var envVar = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
     var override = process.env[ envVar ];
     if ( override ) {
         obj[ prop ] = override;
     }
     // TODO: if Array,isArray(obj), also check for subsequent items
+}
+
+function _setRedisConfigFromEnv() {
+    var portIndex;
+    var redisMainUrl = process.env.REDIS_MAIN_URL;
+    var redisCacheUrl = process.env.REDIS_CACHE_URL;
+    if ( redisMainUrl ) {
+        portIndex = redisMainUrl.lastIndexOf( ':' );
+        config.redis.main.port = redisMainUrl.substring( portIndex + 1 );
+        config.redis.main.host = redisMainUrl.substring( 0, portIndex );
+    }
+    if ( redisCacheUrl ) {
+        portIndex = redisCacheUrl.lastIndexOf( ':' );
+        config.redis.cache.port = redisCacheUrl.substring( portIndex + 1 );
+        config.redis.cache.host = redisCacheUrl.substring( 0, portIndex );
+    }
 }
 
 /**
