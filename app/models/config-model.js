@@ -6,6 +6,7 @@ var pkg = require( '../../package' );
 var merge = require( 'lodash/merge' );
 var path = require( 'path' );
 var fs = require( 'fs' );
+var url = require( 'url' );
 var themePath = path.join( __dirname, '../../public/css' );
 var languagePath = path.join( __dirname, '../../locales' );
 // var debug = require( 'debug' )( 'config-model' );
@@ -58,19 +59,26 @@ function _setConfigValueFromEnv( obj, prop, prefix ) {
 }
 
 function _setRedisConfigFromEnv() {
-    var portIndex;
     var redisMainUrl = process.env.REDIS_MAIN_URL;
     var redisCacheUrl = process.env.REDIS_CACHE_URL;
+
     if ( redisMainUrl ) {
-        portIndex = redisMainUrl.lastIndexOf( ':' );
-        config.redis.main.port = redisMainUrl.substring( portIndex + 1 );
-        config.redis.main.host = redisMainUrl.substring( 0, portIndex );
+        config.redis.main = _extractRedisConfigFromUrl( redisMainUrl );
     }
     if ( redisCacheUrl ) {
-        portIndex = redisCacheUrl.lastIndexOf( ':' );
-        config.redis.cache.port = redisCacheUrl.substring( portIndex + 1 );
-        config.redis.cache.host = redisCacheUrl.substring( 0, portIndex );
+        config.redis.cache = _extractRedisConfigFromUrl( redisCacheUrl );
     }
+}
+
+function _extractRedisConfigFromUrl( redisUrl ) {
+    var parsedUrl = url.parse( redisUrl );
+    var password = parsedUrl.auth && parsedUrl.auth.split( ':' )[ 1 ] ? parsedUrl.auth.split( ':' )[ 1 ] : null;
+
+    return {
+        host: parsedUrl.hostname,
+        port: parsedUrl.port,
+        password: password
+    };
 }
 
 /**
