@@ -1,7 +1,7 @@
 'use strict';
 
+var localConfig;
 var config = require( '../../config/default-config' );
-var localConfig = require( '../../config/config' );
 var pkg = require( '../../package' );
 var merge = require( 'lodash/merge' );
 var path = require( 'path' );
@@ -10,8 +10,39 @@ var themePath = path.join( __dirname, '../../public/css' );
 var languagePath = path.join( __dirname, '../../locales' );
 // var debug = require( 'debug' )( 'config-model' );
 
-// merge default and local config
-merge( config, localConfig );
+// merge default and local config files 
+try {
+    localConfig = fs.statSync( path.resolve( __dirname, '../../config/config' ) );
+    merge( config, localConfig );
+}
+// override default config with environement variables
+catch ( err ) {
+    console.log( 'No local config.json found. Will check environment variables instead.' );
+    _setConfigObjFromEnv( config );
+}
+
+// Unfortunately environment variables are flat, so we have to convert to a flat naming convention.
+function _setConfigObjFromEnv( obj, prefix ) {
+    prefix = prefix || '';
+
+    for ( var propName in obj ) {
+        if ( typeof obj[ propName ] === 'object' ) {
+            _setConfigObjFromEnv( obj[ propName ], prefix + propName + '_' );
+        } else {
+            _setConfigValueFromEnv( obj, propName, prefix );
+        }
+    }
+}
+
+function _setConfigValueFromEnv( obj, prop, prefix ) {
+    // convert structured property to flat ENV variable name
+    var envVar = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
+    var override = process.env[ envVar ];
+    if ( override ) {
+        obj[ prop ] = override;
+    }
+    // TODO: if Array,isArray(obj), also check for subsequent items
+}
 
 /**
  * Returns a list of supported themes,
