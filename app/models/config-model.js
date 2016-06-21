@@ -13,7 +13,7 @@ var languagePath = path.join( __dirname, '../../locales' );
 
 // Merge default and local config files if a local config.json file exists
 try {
-    localConfig = fs.statSync( path.resolve( __dirname, '../../config/config' ) );
+    localConfig = require( '../../config/config' );
     merge( config, localConfig );
 }
 // Override default config with environment variables if a local config.json does not exist
@@ -52,7 +52,8 @@ function _setConfigValueFromEnv( obj, prop, prefix ) {
     // convert structured property to flat environment variable name
     var envVar = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
     var override = process.env[ envVar ];
-    if ( override ) {
+
+    if ( typeof override !== 'undefined' ) {
         obj[ prop ] = override;
     }
     // TODO: if Array,isArray(obj), also check for subsequent items
