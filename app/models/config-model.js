@@ -134,8 +134,6 @@ if ( config[ 'base path' ] && config[ 'base path' ].lastIndexOf( '/' ) === confi
     config[ 'base path' ] = config[ 'base path' ].substring( 0, config[ 'base path' ].length - 1 );
 }
 
-console.log( 'config final:', config );
-
 module.exports = {
     server: config,
     client: {

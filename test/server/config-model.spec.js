@@ -65,11 +65,20 @@ describe( 'Config Model', function() {
 
         it( 'for boolean values in a nested config item', function() {
             config = require( configModulePath );
-            expect( config.server[ 'offline enabled' ] ).to.equal( false );
+            expect( config.server[ 'linked form and data server' ][ 'legacy formhub' ] ).to.equal( false );
             process.env.LINKED_FORM_AND_DATA_SERVER_LEGACY_FORMHUB = 'true'; // string!
             unCache( configModulePath );
             config = require( configModulePath );
             expect( config.server[ 'linked form and data server' ][ 'legacy formhub' ] ).to.equal( true );
+        } );
+
+        it( 'for null values', function() {
+            config = require( configModulePath );
+            expect( config.server[ 'support email' ] ).to.be.a( 'string' );
+            process.env.SUPPORT_EMAIL = 'null'; // string!
+            unCache( configModulePath );
+            config = require( configModulePath );
+            expect( config.server[ 'support email' ] ).to.deep.equal( null );
         } );
 
         it( 'for a config item that has a default value of null', function() {
@@ -83,31 +92,31 @@ describe( 'Config Model', function() {
 
         it( 'for a config item that has a default value of ""', function() {
             config = require( configModulePath );
-            expect( config.google.analytics.ua ).to.deep.equal( '' );
+            expect( config.server.google.analytics.ua ).to.deep.equal( '' );
             process.env.GOOGLE_ANALYTICS_UA = testStringValue;
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config.google.analytics.ua ).to.deep.equal( testStringValue );
+            expect( config.server.google.analytics.ua ).to.deep.equal( testStringValue );
         } );
 
         it( 'for array values that have default value of []', function() {
             config = require( configModulePath );
-            expect( config[ 'themes supported' ] ).to.deep.equal( [] );
+            expect( config.server[ 'themes supported' ] ).to.deep.equal( [] );
             process.env.THEMES_SUPPORTED_0 = 'grid';
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config[ 'themes supported' ] ).to.deep.equal( [ 'grid' ] );
+            expect( config.server[ 'themes supported' ] ).to.deep.equal( [ 'grid' ] );
         } );
 
         it( 'for array values that have a default first item only', function() {
             config = require( configModulePath );
-            expect( config.maps[ 0 ].name ).to.deep.equal( 'streets' );
+            expect( config.server.maps[ 0 ].name ).to.deep.equal( 'streets' );
             process.env.MAP_0_NAME = 'a';
             process.env.MAP_1_NAME = 'b';
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config.maps[ 0 ].name ).to.deep.equal( [ 'a' ] );
-            expect( config.maps[ 1 ].name ).to.deep.equal( [ 'b' ] );
+            expect( config.server.maps[ 0 ].name ).to.deep.equal( [ 'a' ] );
+            expect( config.server.maps[ 1 ].name ).to.deep.equal( [ 'b' ] );
         } );
 
     } );
