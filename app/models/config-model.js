@@ -53,6 +53,12 @@ function _setConfigValueFromEnv( obj, prop, prefix ) {
     var envVar = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
     var override = process.env[ envVar ];
 
+    if ( override === 'true' ) {
+        override = true;
+    }
+    if ( override === 'false' ) {
+        override = false;
+    }
     if ( typeof override !== 'undefined' ) {
         obj[ prop ] = override;
     }
