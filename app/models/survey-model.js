@@ -155,10 +155,12 @@ function _updateProperties( id, survey ) {
 
 function _addSurvey( openRosaKey, survey ) {
     var id;
-
+    console.log( 'adding survey', openRosaKey, survey );
     return new Promise( function( resolve, reject ) {
         client.incr( 'survey:counter', function( error, iterator ) {
             id = _createEnketoId( iterator );
+            console.log( 'iterated counter' );
+            console.log( 'going to save record', id );
             client.multi()
                 .hmset( 'id:' + id, {
                     // explicitly set the properties that need to be saved
@@ -176,6 +178,7 @@ function _addSurvey( openRosaKey, survey ) {
                 .exec( function( error, replies ) {
                     delete pending[ openRosaKey ];
                     if ( error ) {
+                        console.error( error );
                         reject( error );
                     } else {
                         resolve( id );
