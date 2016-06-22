@@ -139,6 +139,8 @@ function getNewOrExistingSurvey( req, res, next ) {
         return _render( 403, quotaErrorMessage, res );
     }
 
+    console.log( 'getting survey' );
+
     return surveyModel
         .getId( survey ) // will return id only for existing && active surveys
         .then( function( id ) {
@@ -146,6 +148,7 @@ function getNewOrExistingSurvey( req, res, next ) {
                 return _render( 403, quotaErrorMessage, res );
             }
             status = ( id ) ? 200 : 201;
+            console.log( 'survey not found, going to set it', survey );
             // even if id was found still call .set() method to update any properties
             return surveyModel.set( survey )
                 .then( function( id ) {
