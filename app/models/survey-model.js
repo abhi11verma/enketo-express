@@ -64,6 +64,8 @@ function setSurvey( survey ) {
     var error;
     var openRosaKey = utils.getOpenRosaKey( survey );
 
+    console.log( 'openrosakey', openRosaKey );
+
     return new Promise( function( resolve, reject ) {
         if ( !openRosaKey ) {
             error = new Error( 'Bad request. Survey information not complete or invalid' );
@@ -77,8 +79,11 @@ function setSurvey( survey ) {
             // to avoid issues with fast consecutive requests
             pending[ openRosaKey ] = true;
 
+            console.log( 'set pending' );
+
             _getEnketoId( openRosaKey )
                 .then( function( id ) {
+                    console.log( 'id in model.set', id );
                     if ( id ) {
                         survey.active = true;
                         delete pending[ openRosaKey ];
@@ -89,6 +94,7 @@ function setSurvey( survey ) {
                 } )
                 .catch( function( error ) {
                     delete pending[ openRosaKey ];
+                    console.error( 'error' );
                     reject( error );
                 } );
         }

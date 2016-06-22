@@ -152,6 +152,7 @@ function getNewOrExistingSurvey( req, res, next ) {
             // even if id was found still call .set() method to update any properties
             return surveyModel.set( survey )
                 .then( function( id ) {
+                    console.log( 'id generated', id );
                     if ( id ) {
                         _render( status, _generateWebformUrls( id, req ), res );
                     } else {
