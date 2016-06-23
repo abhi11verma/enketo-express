@@ -116,6 +116,7 @@ describe( 'Config Model', function() {
             config = require( configModulePath );
             expect( config.server.maps[ 0 ].name ).to.deep.equal( 'a' );
             expect( config.server.maps[ 1 ].name ).to.deep.equal( 'b' );
+            expect( config.server.maps[ 1 ].attribution ).to.deep.equal( '' );
         } );
 
         it( 'parses a redis url to its components', function() {

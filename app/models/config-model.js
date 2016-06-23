@@ -44,11 +44,11 @@ function _setConfigObjFromEnv( obj, prefix ) {
             _setConfigValueFromEnv( obj, propName, prefix );
         }
 
-        // check if next array item exists as env variable
-        if ( Array.isArray( obj ) ) {
+        // check if next array object item exists as env variable
+        if ( Array.isArray( obj ) && typeof obj[ propName ] === 'object' && obj[ propName ] !== null ) {
             var nextIndex = Number( propName ) + 1;
             if ( nextIndex < 5 && typeof obj[ nextIndex ] === 'undefined' ) {
-                obj[ nextIndex ] = {}; // TODO: need to add all properties
+                obj[ nextIndex ] = JSON.parse( JSON.stringify( obj[ propName ] ) ); // TODO: need to remove all values
                 _setConfigObjFromEnv( obj[ nextIndex ], prefix + nextIndex + '_' );
             }
         }
