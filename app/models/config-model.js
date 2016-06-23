@@ -31,12 +31,26 @@ catch ( err ) {
  */
 function _setConfigObjFromEnv( obj, prefix ) {
     prefix = prefix || '';
-    // Unfortunately environment variables are flat, so we have to convert to a flat naming convention.
+
+    if ( Array.isArray( obj ) && obj.length === 0 ) {
+        _setConfigValueFromEnv( obj, 0, prefix );
+    }
+
     for ( var propName in obj ) {
-        if ( typeof obj[ propName ] === 'object' ) {
+        if ( typeof obj[ propName ] === 'object' && obj[ propName ] !== null ) {
             _setConfigObjFromEnv( obj[ propName ], prefix + propName + '_' );
+
         } else {
             _setConfigValueFromEnv( obj, propName, prefix );
+        }
+
+        // check if next array item exists as env variable
+        if ( Array.isArray( obj ) ) {
+            var nextIndex = Number( propName ) + 1;
+            if ( nextIndex < 5 && typeof obj[ nextIndex ] === 'undefined' ) {
+                obj[ nextIndex ] = {}; // TODO: need to add all properties
+                _setConfigObjFromEnv( obj[ nextIndex ], prefix + nextIndex + '_' );
+            }
         }
     }
 }
@@ -50,8 +64,9 @@ function _setConfigObjFromEnv( obj, prefix ) {
  */
 function _setConfigValueFromEnv( obj, prop, prefix ) {
     // convert structured property to flat environment variable name
-    var envVar = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
-    var override = process.env[ envVar ];
+    var nextIndex;
+    var envVarName = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
+    var override = process.env[ envVarName ];
 
     if ( override === 'true' ) {
         override = true;
@@ -59,10 +74,22 @@ function _setConfigValueFromEnv( obj, prop, prefix ) {
     if ( override === 'false' ) {
         override = false;
     }
+    if ( override === 'null' ) {
+        override = null;
+    }
     if ( typeof override !== 'undefined' ) {
         obj[ prop ] = override;
     }
-    // TODO: if Array,isArray(obj), also check for subsequent items
+
+    // For arrays also check subsequent items
+    if ( Array.isArray( obj ) && _envVarExists( Number( prop ) + 1, prefix ) ) {
+        _setConfigValueFromEnv( obj, Number( prop ) + 1, prefix );
+    }
+}
+
+function _envVarExists( prop, prefix ) {
+    var envVarName = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
+    return typeof process.env[ envVarName ] !== 'undefined';
 }
 
 function _setRedisConfigFromEnv() {

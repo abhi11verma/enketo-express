@@ -74,11 +74,11 @@ describe( 'Config Model', function() {
 
         it( 'for null values', function() {
             config = require( configModulePath );
-            expect( config.server[ 'support email' ] ).to.be.a( 'string' );
+            expect( config.server.support.email ).to.be.a( 'string' );
             process.env.SUPPORT_EMAIL = 'null'; // string!
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config.server[ 'support email' ] ).to.deep.equal( null );
+            expect( config.server.support.email ).to.deep.equal( null );
         } );
 
         it( 'for a config item that has a default value of null', function() {
@@ -100,23 +100,31 @@ describe( 'Config Model', function() {
         } );
 
         it( 'for array values that have default value of []', function() {
-            config = require( configModulePath );
-            expect( config.server[ 'themes supported' ] ).to.deep.equal( [] );
             process.env.THEMES_SUPPORTED_0 = 'grid';
+            process.env.THEMES_SUPPORTED_1 = 'formhub';
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config.server[ 'themes supported' ] ).to.deep.equal( [ 'grid' ] );
+            expect( config.server[ 'themes supported' ] ).to.deep.equal( [ 'formhub', 'grid' ] );
         } );
 
         it( 'for array values that have a default first item only', function() {
             config = require( configModulePath );
             expect( config.server.maps[ 0 ].name ).to.deep.equal( 'streets' );
-            process.env.MAP_0_NAME = 'a';
-            process.env.MAP_1_NAME = 'b';
+            process.env.MAPS_0_NAME = 'a';
+            process.env.MAPS_1_NAME = 'b';
             unCache( configModulePath );
             config = require( configModulePath );
-            expect( config.server.maps[ 0 ].name ).to.deep.equal( [ 'a' ] );
-            expect( config.server.maps[ 1 ].name ).to.deep.equal( [ 'b' ] );
+            expect( config.server.maps[ 0 ].name ).to.deep.equal( 'a' );
+            expect( config.server.maps[ 1 ].name ).to.deep.equal( 'b' );
+        } );
+
+        it( 'parses a redis url to its components', function() {
+            process.env.REDIS_MAIN_URL = 'redis://h:pwd@ec2-54-221-230-53.compute-1.amazonaws.com:6869';
+            unCache( configModulePath );
+            config = require( configModulePath );
+            expect( config.server.redis.main.host ).to.equal( 'ec2-54-221-230-53.compute-1.amazonaws.com' );
+            expect( config.server.redis.main.port ).to.equal( '6869' );
+            expect( config.server.redis.main.password ).to.equal( 'pwd' );
         } );
 
     } );
