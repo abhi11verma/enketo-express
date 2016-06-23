@@ -48,9 +48,26 @@ function _setConfigObjFromEnv( obj, prefix ) {
         if ( Array.isArray( obj ) && typeof obj[ propName ] === 'object' && obj[ propName ] !== null ) {
             var nextIndex = Number( propName ) + 1;
             if ( nextIndex < 5 && typeof obj[ nextIndex ] === 'undefined' ) {
-                obj[ nextIndex ] = JSON.parse( JSON.stringify( obj[ propName ] ) ); // TODO: need to remove all values
+                obj[ nextIndex ] = _getEmptyClone( obj[ propName ] ); // TODO: need to remove all values
                 _setConfigObjFromEnv( obj[ nextIndex ], prefix + nextIndex + '_' );
             }
+        }
+    }
+}
+
+function _getEmptyClone( obj ) {
+    var clone = JSON.parse( JSON.stringify( obj ) );
+    _emptyObjectProperties( clone );
+
+    return clone;
+}
+
+function _emptyObjectProperties( obj ) {
+    for ( var prop in obj ) {
+        if ( typeof obj[ prop ] === 'object' && obj[ prop ] !== null ) {
+            _emptyObjectProperties( obj[ prop ] );
+        } else if ( obj[ prop ] ) {
+            obj[ prop ] = ''; // let's hope this has no side-effects
         }
     }
 }
