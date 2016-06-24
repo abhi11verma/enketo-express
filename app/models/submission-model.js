@@ -99,7 +99,8 @@ function add( id, instanceId, deprecatedId ) {
     if ( logger ) {
         logger.info( instanceId, {
             enketoId: id,
-            deprecatedId: deprecatedId
+            deprecatedId: deprecatedId,
+            submissionSuccess: true
         } );
     }
 }
