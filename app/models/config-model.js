@@ -19,40 +19,98 @@ try {
 // Override default config with environment variables if a local config.json does not exist
 catch ( err ) {
     console.log( 'No local config.json found. Will check environment variables instead.' );
-    _setConfigObjFromEnv( config );
+    _updateConfigFromEnv( config );
     _setRedisConfigFromEnv();
 }
 
-/**
- * Overrides a configuration object with values provided by environment variables.
- * 
- * @param {*} obj    The configuration object to set.
- * @param {string} prefix A prefix to use to create a flat variable (for nested objects).
- */
-function _setConfigObjFromEnv( obj, prefix ) {
-    prefix = prefix || '';
 
-    if ( Array.isArray( obj ) && obj.length === 0 ) {
-        _setConfigValueFromEnv( obj, 0, prefix );
-    }
+function _updateConfigFromEnv( config ) {
+    var parts;
+    var part;
+    var nextNumberIndex;
+    var setting;
+    var proceed;
 
-    for ( var propName in obj ) {
-        if ( typeof obj[ propName ] === 'object' && obj[ propName ] !== null ) {
-            _setConfigObjFromEnv( obj[ propName ], prefix + propName + '_' );
-
-        } else {
-            _setConfigValueFromEnv( obj, propName, prefix );
-        }
-
-        // check if next array object item exists as env variable
-        if ( Array.isArray( obj ) && typeof obj[ propName ] === 'object' && obj[ propName ] !== null ) {
-            var nextIndex = Number( propName ) + 1;
-            if ( nextIndex < 5 && typeof obj[ nextIndex ] === 'undefined' ) {
-                obj[ nextIndex ] = _getEmptyClone( obj[ propName ] ); // TODO: need to remove all values
-                _setConfigObjFromEnv( obj[ nextIndex ], prefix + nextIndex + '_' );
+    for ( var envVarName in process.env ) {
+        if ( process.env.hasOwnProperty( envVarName ) && envVarName.indexOf( 'ENKETO_' ) === 0 ) {
+            parts = envVarName.split( '_' ).slice( 1 ).map( _convertNumbers );
+            nextNumberIndex = _findNumberIndex( parts );
+            proceed = true;
+            while ( proceed ) {
+                proceed = false;
+                part = parts.slice( 0, nextNumberIndex ).join( '_' );
+                setting = _findSetting( config, part );
+                if ( setting ) {
+                    if ( !Array.isArray( setting[ 0 ][ setting[ 1 ] ] ) ) {
+                        setting[ 0 ][ setting[ 1 ] ] = _convertType( process.env[ envVarName ] );
+                    } else {
+                        if ( nextNumberIndex === parts.length - 1 ) {
+                            // simple populate array item (simple value)
+                            setting[ 0 ][ setting[ 1 ] ][ parts[ nextNumberIndex ] ] = process.env[ envVarName ];
+                        } else if ( typeof setting[ 0 ][ setting[ 1 ] ][ parts[ nextNumberIndex ] ] !== 'undefined' ) {
+                            // this array item (object) already exists
+                            nextNumberIndex = _findNumberIndex( parts, nextNumberIndex + 1 );
+                            proceed = true;
+                        } else {
+                            // clone previous array item (object) and empty all property values
+                            setting[ 0 ][ setting[ 1 ] ][ parts[ nextNumberIndex ] ] = _getEmptyClone( setting[ 0 ][ setting[ 1 ] ][ parts[ nextNumberIndex ] - 1 ] );
+                            proceed = true;
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+function _convertType( str ) {
+    switch ( str ) {
+        case 'true':
+            return true;
+        case 'false':
+            return false;
+        case 'null':
+            return null;
+        default:
+            return str;
+    }
+}
+
+function _findSetting( obj, envName, prefix ) {
+    var found;
+    prefix = prefix || '';
+
+    for ( var prop in obj ) {
+        if ( obj.hasOwnProperty( prop ) ) {
+            var propEnvStyle = prefix + prop.replace( / /g, '_' ).toUpperCase();
+            if ( propEnvStyle === envName ) {
+                return [ obj, prop ];
+            } else if ( typeof obj[ prop ] === 'object' && obj[ prop ] !== null ) {
+                found = _findSetting( obj[ prop ], envName, propEnvStyle + '_' );
+                if ( found ) {
+                    return found;
+                }
+            }
+        }
+    }
+}
+
+function _convertNumbers( str ) {
+    // item is always a non-empty string
+    var converted = Number( str );
+    return !isNaN( converted ) ? converted : str;
+}
+
+function _findNumberIndex( arr, start ) {
+    var i;
+    start = start || 0;
+    arr.some( function( val, index ) {
+        if ( typeof val === 'number' && index >= start ) {
+            i = index;
+            return true;
+        }
+    } );
+    return i;
 }
 
 function _getEmptyClone( obj ) {
@@ -72,46 +130,9 @@ function _emptyObjectProperties( obj ) {
     }
 }
 
-/**
- * Sets a configuration variable with the value set in its corresponding environment variable.
- * 
- * @param {[type]} obj    The configuration object to set.
- * @param {[type]} prop   The property of this configuration object to set.
- * @param {[type]} prefix The prefix to use to find a flat enviroment variable of a nested object property.
- */
-function _setConfigValueFromEnv( obj, prop, prefix ) {
-    // convert structured property to flat environment variable name
-    var nextIndex;
-    var envVarName = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
-    var override = process.env[ envVarName ];
-
-    if ( override === 'true' ) {
-        override = true;
-    }
-    if ( override === 'false' ) {
-        override = false;
-    }
-    if ( override === 'null' ) {
-        override = null;
-    }
-    if ( typeof override !== 'undefined' ) {
-        obj[ prop ] = override;
-    }
-
-    // For arrays also check subsequent items
-    if ( Array.isArray( obj ) && _envVarExists( Number( prop ) + 1, prefix ) ) {
-        _setConfigValueFromEnv( obj, Number( prop ) + 1, prefix );
-    }
-}
-
-function _envVarExists( prop, prefix ) {
-    var envVarName = ( prefix + prop ).replace( / /g, '_' ).toUpperCase();
-    return typeof process.env[ envVarName ] !== 'undefined';
-}
-
 function _setRedisConfigFromEnv() {
-    var redisMainUrl = process.env.REDIS_MAIN_URL;
-    var redisCacheUrl = process.env.REDIS_CACHE_URL;
+    var redisMainUrl = process.env.ENKETO_REDIS_MAIN_URL;
+    var redisCacheUrl = process.env.ENKETO_REDIS_CACHE_URL;
 
     if ( redisMainUrl ) {
         config.redis.main = _extractRedisConfigFromUrl( redisMainUrl );
