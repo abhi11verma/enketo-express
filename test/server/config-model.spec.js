@@ -123,6 +123,22 @@ describe( 'Config Model', function() {
             expect( config.server.maps[ 2 ].name ).to.deep.equal( 'c' );
         } );
 
+        it( 'for nested array values that have a default first item only', function() {
+            config = require( configModulePath );
+            expect( config.server.maps[ 0 ].tiles.length ).to.equal( 1 );
+            process.env.ENKETO_MAPS_0_TILES_0 = 'a';
+            process.env.ENKETO_MAPS_0_TILES_1 = 'b';
+            process.env.ENKETO_MAPS_1_TILES_0 = 'c';
+            process.env.ENKETO_MAPS_2_TILES_0 = 'd';
+            process.env.ENKETO_MAPS_2_TILES_1 = 'e';
+            unCache( configModulePath );
+            config = require( configModulePath );
+            expect( config.server.maps.length ).to.deep.equal( 3 );
+            expect( config.server.maps[ 0 ].tiles ).to.deep.equal( [ 'a', 'b' ] );
+            expect( config.server.maps[ 1 ].tiles ).to.deep.equal( [ 'c' ] );
+            expect( config.server.maps[ 2 ].tiles ).to.deep.equal( [ 'd', 'e' ] );
+        } );
+
         it( 'parses a redis url to its components', function() {
             process.env.ENKETO_REDIS_MAIN_URL = 'redis://h:pwd@ec2-54-221-230-53.compute-1.amazonaws.com:6869';
             unCache( configModulePath );
