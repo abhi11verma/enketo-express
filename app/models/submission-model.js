@@ -26,7 +26,11 @@ var logger;
 // only instantiate logger if required
 if ( config.log.submissions ) {
     logger = require( 'bristol' );
-    logger.addTarget( 'file', {
+    logger
+    // for ephemeral file systems (e.g. Heroku) also use write a log to the console
+        .addTarget( 'console' )
+        // for non-ephemeral single-server installations, write to a dedicated easy-to-process submission log file
+        .addTarget( 'file', {
             file: path.resolve( __dirname, '../../logs/submissions.log' )
         } )
         .withFormatter( _formatter );
