@@ -3,19 +3,19 @@ Heroku deployment
 
 ### First time
 
-1. Clone Enketo Express.
-2. Install and configure the Heroku Toolbelt.
+1. Install and configure the Heroku Toolbelt.
+2. Clone Enketo Express.
 3. Create your Heroku application from your Enketo Express folder with `heroku create`.
-3. Configure Enketo (see next section). The absolute minimum is setting `ENKETO_LINKED_FORM_AND_DATA_SERVER_SERVER_URL=`. This could be an empty value.
-4. Push code to Heroku with `git push heroku master`.
-5. Start web server with `heroku ps:scale web=1`. For multiple dynos upgrade to Standard or Performance first. You'll likely have to upgrade your heroku redis addons as well, at least the one containing the main database.
-6. Create main database with `heroku addons:create heroku-redis:premium-0 --as enketo_redis_main`.
-7. Create cache database with `heroku addons:create heroku-redis:premium-0 --as enketo_redis_cache`. Note that _heroku-redis:premium-0_ is persistent which is actually not necessary, but won't hurt either.
-8. Make sure to check logs. You may have to upgrade the redis addons!
+4. Configure Enketo (see next section). The absolute minimum is setting `ENKETO_LINKED_FORM_AND_DATA_SERVER_SERVER_URL=`. This could be an empty value.
+5. Create main database with `heroku addons:create heroku-redis:premium-0 --as enketo_redis_main`.
+6. Create cache database with `heroku addons:create heroku-redis:premium-0 --as enketo_redis_cache`. Note that _heroku-redis:premium-0_ is persistent which is actually not necessary, but won't hurt either.
+7. Start web server with `heroku ps:scale web=1`. For multiple dynos upgrade to Standard or Performance first. You'll likely have to upgrade your heroku redis addons as well, at least the one containing the main database (e.g. with `heroku addons:upgrade enketo_redis_main:premium-1` - this takes several minutes to complete).
+8. Push code to Heroku with `git push heroku master`.
+9. Check the logs while it's running. You may have to upgrade the redis addons (error: too many connections) or memory (error: memory quota exceeded)!
 
 ### Heroku configuration 
 
-On Heroku, the regular config.json configuration should not be used. That file should not be created. Instead Enketo is configured with environment variables using `heroku config:set`. Just like with config.json, these environment variables will overwrite the default configuration set in [default-config.json](../config/default-config.json). To read how each configuration variable can be set using a (flat) configuration variable name, see [sample.env](../config/sample.env).
+On Heroku, the regular config.json configuration should not be used (and not be created). Instead Enketo is configured with environment variables using `heroku config:set`. Just like with config.json, these environment variables will overwrite the default configuration set in [default-config.json](../config/default-config.json). To read how each configuration variable can be set using a (flat) configuration variable name, see [sample.env](../config/sample.env).
 
 Enketo's JS and CSS **build process** uses configuration variables. This means that every time an environment variable (that is used in browser scripts) is changed, **Enketo needs to rebuild**. In Heroku rebuilds are always triggered with a git push. If there is nothing to push you'll therefore trick Heroku by pushing an empty commit like this: `git commit --allow-empty -m "empty commit"`.
 
@@ -27,6 +27,6 @@ Enketo's JS and CSS **build process** uses configuration variables. This means t
 
 ### Disadvantages of using Heroku
 
-1. Initial Enketo configuration is more cumbersome (editing a structured json file is just easier and more user-friendly).
-2. Expensive for small servers.
-3. Little control. Requires trust (e.g. for database backups).
+1. Expensive.
+2. Initial Enketo configuration is more cumbersome (editing a structured json file is just easier and more user-friendly).
+3. Little control. Requires trust (e.g. for database backups) and relying on support (e.g. for database restoration).
