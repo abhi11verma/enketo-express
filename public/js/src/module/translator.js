@@ -37,7 +37,7 @@ init = function( something ) {
                 fallbackLng: 'en',
                 joinArrays: '\n',
                 backend: {
-                    loadPath: settings.basePath + '/locales/__lng__/translation-combined.json',
+                    loadPath: settings.basePath + '/locales/__lng__/translation.json',
                 },
                 detection: {
                     order: [ 'querystring', 'navigator' ],

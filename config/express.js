@@ -44,7 +44,7 @@ i18next
         fallbackLng: 'en',
         joinArrays: '\n',
         backend: {
-            loadPath: path.resolve( __dirname, '../locales/__lng__/translation-combined.json' )
+            loadPath: path.resolve( __dirname, '../locales/__lng__/translation.json' )
         },
         detection: {
             order: [ 'querystring', 'header' ],

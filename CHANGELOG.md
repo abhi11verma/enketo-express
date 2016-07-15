@@ -2,11 +2,8 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-[1.32.0] - 2016-07-15
+[Unreleased]
 ---------------------
-##### Added
-- Ability to add additional translation strings in port of EE.
-
 ##### Changed
 - Updated Lao translation.
 - Show "*" for all questions with a "required" expression.
